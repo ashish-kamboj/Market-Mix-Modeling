@@ -1,3 +1,4 @@
+## Problem Statement
 Build a  Market Mix Model for one of the e-commerce firm (specializing in electronic products). They have a detailed data available about their marketing spent for a couple of years which includes spending on commercials, online campaigns, and pricing and promotion strategies.
 
 In order to make marketing budget for the next year need to develop a market mix model to observe the actual impact of different marketing variables over the last year and based on the understanding of the model will have to recommend the optimal budget allocation for different marketing levers.
@@ -23,6 +24,7 @@ Data is from July 2015 to June 2016. The data consists of the following types of
  - Days when there was any special sale
  - Monthly NPS score – this may work as a proxy to ‘voice of customer’
 
+## Solution
 1. **Data Exploration**
 	- variable Identification
 	- Univariate and Bi-Variate Analysis
