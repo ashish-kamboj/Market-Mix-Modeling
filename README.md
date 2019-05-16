@@ -17,7 +17,8 @@ Data is from July 2015 to June 2016. The data consists of the following types of
  - **Cust id:** Unique identification of a customer
  - **Product MRP:** Maximum retail price of the product
  - **Product procurement SLA:** Time typically taken to procure the product
-Apart from this, the following information is also available:
+ 
+ Apart from this, the following information is also available:
  - Monthly spends on various advertising channels
  - Days when there was any special sale
  - Monthly NPS score – this may work as a proxy to ‘voice of customer’
