@@ -1,50 +1,112 @@
-## Problem Statement
-Build a  Market Mix Model for one of the e-commerce firm (specializing in electronic products). They have a detailed data available about their marketing spent for a couple of years which includes spending on commercials, online campaigns, and pricing and promotion strategies.
+# Market Mix Modeling (ElecKart)
 
-In order to make marketing budget for the next year need to develop a market mix model to observe the actual impact of different marketing variables over the last year and based on the understanding of the model will have to recommend the optimal budget allocation for different marketing levers.
+**Market mix modeling for an e‑commerce firm (electronic products)** — this project shows an end‑to‑end approach to estimate the impact of marketing levers (TV, Digital, SEM, Affiliates, etc.), pricing and promotions on weekly GMV (revenue) and to recommend budget allocation.
 
-## Data Understanding
-Data is from July 2015 to June 2016. The data consists of the following types of information:
+---
 
-**Order level data**
- - **FSN ID:** The unique identification of each SKU
- - **Order Date:** Date on which the order was placed
- - **Order ID:** The unique identification number of each order
- - **Order item ID:** Suppose you order 2 different products under the same order, it generates 2 different order Item IDs under the same order ID; orders are tracked by the Order Item ID.
- - **GMV:** Gross Merchandise Value or Revenue
- - **Units:** Number of units of the specific product sold
- - **Order payment type:** How the order was paid – prepaid or cash on delivery
- - **SLA:** Number of days it typically takes to deliver the product
- - **Cust id:** Unique identification of a customer
- - **Product MRP:** Maximum retail price of the product
- - **Product procurement SLA:** Time typically taken to procure the product
- 
- Apart from this, the following information is also available:
- - Monthly spends on various advertising channels
- - Days when there was any special sale
- - Monthly NPS score – this may work as a proxy to ‘voice of customer’
+## Quick summary
+- Problem: quantify the contribution of different marketing channels and pricing levers on sales (GMV) for an online electronics retailer and recommend budget allocation.
+- Data period: July 2015 to June 2016 (weekly aggregation in the analysis).
+- Main deliverables (in code): data preparation and EDA, feature engineering (adstock, lags, moving averages), multiple model families (linear, multiplicative, Koyck, distributed lag, multiplicative+distributed lag), elasticity estimates and plots, 5‑fold cross validation.
 
-## Solution
-1. **Data Exploration**
-	- variable Identification
-	- Univariate and Bi-Variate Analysis
+---
 
-2. **Data Prepartion**
-	- Missing Values and Outlier Treatment
-	- Variable Transformation
-	- Unified date format
+## Repository structure (top-level)
+```
+README.md
+Data_Preparation_and_EDA.R        # data cleaning, monthly->weekly conversion, initial EDA
+Data_Preparation_and_EDA.md      # notebook-style rendered output for the above
+Data_Preparation_and_EDA_files/  # supporting images for the .md
+Feature_Engineering_and_EDA.R    # feature engineering: KPIs, adstock, lags, moving averages, EDA
+Feature_Engineering_and_EDA.md   # notebook-style rendered output for the above
+Feature_Engineering_and_EDA_files/
+ModelBuilding_CameraAccessory.R  # model building & evaluation for CameraAccessory subcategory
+ModelBuilding_GamingAccessory.R  # model building & evaluation for GamingAccessory subcategory
+ModelBuilding_HomeAudio.R        # model building & evaluation for HomeAudio subcategory
+```
 
-3. **Feature Engineering**
-	- Feature Extraction and Selection
-	- Variable Interaction
-	- Feature Creation
+How it fits together: Data_Preparation_and_EDA.R ingests raw product sales (ConsumerElectronics.csv) and media data (Media data and other information.xlsx), converts monthly media spends to weekly, and performs initial EDA. Feature_Engineering_and_EDA.R generates weekly KPIs (list price, promotional offer, prepaid order %, price_tag clustering), adstocked media variables, moving averages and lagged variables. The three ModelBuilding_*.R scripts take the engineered weekly datasets for each product subcategory and build/compare model families, compute elasticities, and create diagnostic plots.
 
-4. **Model Building**
-	- Basic linear Model
-	- Multiplicative Model
-	- Koyck Model
-	- Distributed Lag Model
-	- Multiplicative + Distributed Lag Model
+---
 
-5. **Model Evaluation**
-  - Performed 5 fold cross validation
+## Data required
+Put these files in the repository root (or update file paths in the scripts):
+- ConsumerElectronics.csv
+- Media data and other information.xlsx
+
+The R scripts expect those filenames exactly (see Data_Preparation_and_EDA.R lines that read them).
+
+---
+
+## Reproducible steps (shortest path)
+1. Open R (or RStudio) in the project root.
+2. Install required CRAN packages (examples below):
+
+```r
+install.packages(c(
+  "readxl", "lubridate", "ggplot2", "scales", "ggthemes", "cowplot",
+  "dplyr", "zoo", "DataCombine", "imputeTS", "MASS", "car", "DAAG", "knitr"
+))
+```
+
+3. Source the scripts in order (they print summaries and draw plots):
+
+```r
+source("Data_Preparation_and_EDA.R")
+source("Feature_Engineering_and_EDA.R")
+# then run model building for subcategories you need
+source("ModelBuilding_CameraAccessory.R")
+source("ModelBuilding_GamingAccessory.R")
+source("ModelBuilding_HomeAudio.R")
+```
+
+Notes:
+- The scripts create many ggplot graphs interactively. To save plots, redirect the plotting device or modify the scripts to call ggsave() where required.
+- If you want a single notebook-style output, open the supplied .md files (Data_Preparation_and_EDA.md and Feature_Engineering_and_EDA.md) which contain rendered outputs of earlier runs.
+
+---
+
+## Important analysis & modeling choices (documented in code)
+- Weekly aggregation: monthly media spends are prorated into weekly amounts and merged with transaction-level data which is aggregated by week.
+- Adstock: the adstock rate used in feature engineering is 0.50 (see Feature_Engineering_and_EDA.R). Adstock is computed via a recursive filter over weekly media spends.
+- Transformations:
+  - Multiplicative models use log transformations; zeroes are replaced with a small value (0.00001) before log.
+  - For multiplicative + distributed lag models, negative incremental lag values are shifted to be positive before log.
+- Lag features: list_price, promotional_offer and gmv are lagged (1–3 weeks) and incremental change features are created.
+- Model selection: stepwise regression (both directions) is used to shortlist predictors, then iterative manual variable removal guided by p-values and VIF (car::vif) is applied.
+- Cross‑validation: cv.lm from DAAG is used with m=5 and seed=29 for model stability checks.
+- Elasticities: estimated from model coefficients using the standard midpoint formula implemented in each ModelBuilding_*.R script; elasticities are plotted as bar charts (positive = green, negative = red).
+
+---
+
+## What the model scripts output
+- Model summaries (R-squared, coefficients, p-values) printed to console via summary().
+- Variance Inflation Factors (vif) printed using car::vif().
+- 5‑fold cross validation results printed and optionally plotted (cv.lm).
+- Elasticity tables and elasticity bar charts for each final model.
+- Many diagnostic ggplots (response curves, residual checks, elasticity plots). By default these are displayed in the R plotting window — edit the scripts to save to files.
+
+---
+
+## Suggested next steps / improvements
+- Add an RMarkdown (.Rmd) that sources the scripts and produces a single reproducible report with figures (knitr / rmarkdown). The repo already contains .md files from previous runs that can be used as a base.
+- Add automated saving of model artifacts (coefficients, elasticity tables, plots) as CSV/PNG so results are reproducible without an interactive session.
+- Parameterize adstock rate(s) and implement grid search or optimization to estimate adstock decay parameters instead of fixing 0.5.
+- Add model comparison metrics (RMSE, MAE) saved per fold to better compare candidate models.
+- Add a license to clarify reuse (e.g. MIT) if you want to make this openly reusable.
+
+---
+
+## Dependencies (packages used across scripts)
+- readxl, lubridate, ggplot2, scales, ggthemes, cowplot, dplyr, zoo, DataCombine, imputeTS, MASS, car, DAAG, knitr
+
+---
+
+## Attribution / Contact
+Author: ashish-kamboj (original repository)
+If you have improvements (automation, tests, RMarkdown report), feel free to open a PR.
+
+---
+
+## License
+No license is specified in this repository. If you want to allow reuse, add an explicit license file (e.g., LICENSE with MIT or BSD).
