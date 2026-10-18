@@ -25,7 +25,22 @@ ModelBuilding_GamingAccessory.R  # model building & evaluation for GamingAccesso
 ModelBuilding_HomeAudio.R        # model building & evaluation for HomeAudio subcategory
 ```
 
-How it fits together: Data_Preparation_and_EDA.R ingests raw product sales (ConsumerElectronics.csv) and media data (Media data and other information.xlsx), converts monthly media spends to weekly, and performs initial EDA. Feature_Engineering_and_EDA.R generates weekly KPIs (list price, promotional offer, prepaid order %, price_tag clustering), adstocked media variables, moving averages and lagged variables. The three ModelBuilding_*.R scripts take the engineered weekly datasets for each product subcategory and build/compare model families, compute elasticities, and create diagnostic plots.
+How it fits together:
+- Data_Preparation_and_EDA.R
+  - Ingests raw product sales (`ConsumerElectronics.csv`) and media data (`Media data and other information.xlsx`).
+  - Cleans transaction-level data, prorates monthly media spends to weekly and merges media/NPS/holiday information with orders.
+  - Produces initial exploratory plots (monthly & weekly GMV/units, payment-type breakdowns, weekly media spends).
+- Feature_Engineering_and_EDA.R
+  - Builds engineered KPIs: `list_price`, `promotional_offer`, `payment_ind`, prepaid order % and `price_tag` clustering.
+  - Computes adstocked media variables (adstock rate = 0.5), moving averages, and creates 1–3 week lag / incremental lag features for price and GMV.
+  - Aggregates everything to weekly level and produces response-curve plots for GMV vs independent variables.
+- ModelBuilding_*.R (CameraAccessory / GamingAccessory / HomeAudio)
+  - Take the weekly engineered datasets and run multiple model families (Linear, Multiplicative, Koyck, Distributed Lag, Multiplicative+Distributed Lag).
+  - Use stepwise selection and manual pruning guided by p-values and VIF (car::vif) to reach final models.
+  - Run 5‑fold cross-validation (DAAG::cv.lm), compute elasticity estimates from final models, and generate diagnostic & elasticity plots.
+- Outputs and artifacts
+  - Console outputs: model summaries, VIF tables, cross-validation prints.
+  - Visuals: ggplot diagnostics and elasticity bar charts (displayed interactively; .md files contain earlier rendered outputs).
 
 ---
 
